@@ -1,0 +1,428 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Terraform remote state S3 buckets (private) for core/services domains across dev/stage/prod.
+
+Parameters:
+  Org:
+    Type: String
+    Default: unobtainium
+    Description: Org / prefix used in bucket names
+
+  TerraformExecutionRoleArn:
+    Type: String
+    Description: IAM Role ARN assumed by GitHub Actions (OIDC) that runs Terraform (allowed to read/write tfstate)
+
+Resources:
+  # --------------------------
+  # Buckets: core
+  # --------------------------
+  TfStateCoreDevBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${Org}-tfstate-core-dev"
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: managed-by
+          Value: cloudformation
+        - Key: component
+          Value: terraform-remote-state
+        - Key: org
+          Value: !Ref Org
+        - Key: domain
+          Value: core
+        - Key: env
+          Value: dev
+
+  TfStateCoreDevBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref TfStateCoreDevBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          # Enforce TLS
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: "*"
+            Action: "s3:*"
+            Resource:
+              - !Sub "arn:aws:s3:::${Org}-tfstate-core-dev"
+              - !Sub "arn:aws:s3:::${Org}-tfstate-core-dev/*"
+            Condition:
+              Bool:
+                aws:SecureTransport: "false"
+
+          # Allow Terraform role to list bucket (useful for state operations)
+          - Sid: AllowTerraformRoleList
+            Effect: Allow
+            Principal:
+              AWS: !Ref TerraformExecutionRoleArn
+            Action:
+              - "s3:ListBucket"
+            Resource: !Sub "arn:aws:s3:::${Org}-tfstate-core-dev"
+
+          # Allow Terraform role to read/write state objects
+          - Sid: AllowTerraformRoleStateRW
+            Effect: Allow
+            Principal:
+              AWS: !Ref TerraformExecutionRoleArn
+            Action:
+              - "s3:GetObject"
+              - "s3:PutObject"
+              - "s3:DeleteObject"
+              - "s3:GetObjectVersion"
+              - "s3:AbortMultipartUpload"
+              - "s3:ListBucketMultipartUploads"
+              - "s3:ListMultipartUploadParts"
+            Resource: !Sub "arn:aws:s3:::${Org}-tfstate-core-dev/*"
+
+  TfStateCoreStageBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${Org}-tfstate-core-stage"
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: managed-by
+          Value: cloudformation
+        - Key: component
+          Value: terraform-remote-state
+        - Key: org
+          Value: !Ref Org
+        - Key: domain
+          Value: core
+        - Key: env
+          Value: stage
+
+  TfStateCoreStageBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref TfStateCoreStageBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: "*"
+            Action: "s3:*"
+            Resource:
+              - !Sub "arn:aws:s3:::${Org}-tfstate-core-stage"
+              - !Sub "arn:aws:s3:::${Org}-tfstate-core-stage/*"
+            Condition:
+              Bool:
+                aws:SecureTransport: "false"
+          - Sid: AllowTerraformRoleList
+            Effect: Allow
+            Principal:
+              AWS: !Ref TerraformExecutionRoleArn
+            Action:
+              - "s3:ListBucket"
+            Resource: !Sub "arn:aws:s3:::${Org}-tfstate-core-stage"
+          - Sid: AllowTerraformRoleStateRW
+            Effect: Allow
+            Principal:
+              AWS: !Ref TerraformExecutionRoleArn
+            Action:
+              - "s3:GetObject"
+              - "s3:PutObject"
+              - "s3:DeleteObject"
+              - "s3:GetObjectVersion"
+              - "s3:AbortMultipartUpload"
+              - "s3:ListBucketMultipartUploads"
+              - "s3:ListMultipartUploadParts"
+            Resource: !Sub "arn:aws:s3:::${Org}-tfstate-core-stage/*"
+
+  TfStateCoreProdBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${Org}-tfstate-core-prod"
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: managed-by
+          Value: cloudformation
+        - Key: component
+          Value: terraform-remote-state
+        - Key: org
+          Value: !Ref Org
+        - Key: domain
+          Value: core
+        - Key: env
+          Value: prod
+
+  TfStateCoreProdBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref TfStateCoreProdBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: "*"
+            Action: "s3:*"
+            Resource:
+              - !Sub "arn:aws:s3:::${Org}-tfstate-core-prod"
+              - !Sub "arn:aws:s3:::${Org}-tfstate-core-prod/*"
+            Condition:
+              Bool:
+                aws:SecureTransport: "false"
+          - Sid: AllowTerraformRoleList
+            Effect: Allow
+            Principal:
+              AWS: !Ref TerraformExecutionRoleArn
+            Action:
+              - "s3:ListBucket"
+            Resource: !Sub "arn:aws:s3:::${Org}-tfstate-core-prod"
+          - Sid: AllowTerraformRoleStateRW
+            Effect: Allow
+            Principal:
+              AWS: !Ref TerraformExecutionRoleArn
+            Action:
+              - "s3:GetObject"
+              - "s3:PutObject"
+              - "s3:DeleteObject"
+              - "s3:GetObjectVersion"
+              - "s3:AbortMultipartUpload"
+              - "s3:ListBucketMultipartUploads"
+              - "s3:ListMultipartUploadParts"
+            Resource: !Sub "arn:aws:s3:::${Org}-tfstate-core-prod/*"
+
+  # --------------------------
+  # Buckets: services
+  # --------------------------
+  TfStateServicesDevBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${Org}-tfstate-services-dev"
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: managed-by
+          Value: cloudformation
+        - Key: component
+          Value: terraform-remote-state
+        - Key: org
+          Value: !Ref Org
+        - Key: domain
+          Value: services
+        - Key: env
+          Value: dev
+
+  TfStateServicesDevBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref TfStateServicesDevBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: "*"
+            Action: "s3:*"
+            Resource:
+              - !Sub "arn:aws:s3:::${Org}-tfstate-services-dev"
+              - !Sub "arn:aws:s3:::${Org}-tfstate-services-dev/*"
+            Condition:
+              Bool:
+                aws:SecureTransport: "false"
+          - Sid: AllowTerraformRoleList
+            Effect: Allow
+            Principal:
+              AWS: !Ref TerraformExecutionRoleArn
+            Action:
+              - "s3:ListBucket"
+            Resource: !Sub "arn:aws:s3:::${Org}-tfstate-services-dev"
+          - Sid: AllowTerraformRoleStateRW
+            Effect: Allow
+            Principal:
+              AWS: !Ref TerraformExecutionRoleArn
+            Action:
+              - "s3:GetObject"
+              - "s3:PutObject"
+              - "s3:DeleteObject"
+              - "s3:GetObjectVersion"
+              - "s3:AbortMultipartUpload"
+              - "s3:ListBucketMultipartUploads"
+              - "s3:ListMultipartUploadParts"
+            Resource: !Sub "arn:aws:s3:::${Org}-tfstate-services-dev/*"
+
+  TfStateServicesStageBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${Org}-tfstate-services-stage"
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: managed-by
+          Value: cloudformation
+        - Key: component
+          Value: terraform-remote-state
+        - Key: org
+          Value: !Ref Org
+        - Key: domain
+          Value: services
+        - Key: env
+          Value: stage
+
+  TfStateServicesStageBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref TfStateServicesStageBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: "*"
+            Action: "s3:*"
+            Resource:
+              - !Sub "arn:aws:s3:::${Org}-tfstate-services-stage"
+              - !Sub "arn:aws:s3:::${Org}-tfstate-services-stage/*"
+            Condition:
+              Bool:
+                aws:SecureTransport: "false"
+          - Sid: AllowTerraformRoleList
+            Effect: Allow
+            Principal:
+              AWS: !Ref TerraformExecutionRoleArn
+            Action:
+              - "s3:ListBucket"
+            Resource: !Sub "arn:aws:s3:::${Org}-tfstate-services-stage"
+          - Sid: AllowTerraformRoleStateRW
+            Effect: Allow
+            Principal:
+              AWS: !Ref TerraformExecutionRoleArn
+            Action:
+              - "s3:GetObject"
+              - "s3:PutObject"
+              - "s3:DeleteObject"
+              - "s3:GetObjectVersion"
+              - "s3:AbortMultipartUpload"
+              - "s3:ListBucketMultipartUploads"
+              - "s3:ListMultipartUploadParts"
+            Resource: !Sub "arn:aws:s3:::${Org}-tfstate-services-stage/*"
+
+  TfStateServicesProdBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${Org}-tfstate-services-prod"
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: managed-by
+          Value: cloudformation
+        - Key: component
+          Value: terraform-remote-state
+        - Key: org
+          Value: !Ref Org
+        - Key: domain
+          Value: services
+        - Key: env
+          Value: prod
+
+  TfStateServicesProdBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref TfStateServicesProdBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: "*"
+            Action: "s3:*"
+            Resource:
+              - !Sub "arn:aws:s3:::${Org}-tfstate-services-prod"
+              - !Sub "arn:aws:s3:::${Org}-tfstate-services-prod/*"
+            Condition:
+              Bool:
+                aws:SecureTransport: "false"
+          - Sid: AllowTerraformRoleList
+            Effect: Allow
+            Principal:
+              AWS: !Ref TerraformExecutionRoleArn
+            Action:
+              - "s3:ListBucket"
+            Resource: !Sub "arn:aws:s3:::${Org}-tfstate-services-prod"
+          - Sid: AllowTerraformRoleStateRW
+            Effect: Allow
+            Principal:
+              AWS: !Ref TerraformExecutionRoleArn
+            Action:
+              - "s3:GetObject"
+              - "s3:PutObject"
+              - "s3:DeleteObject"
+              - "s3:GetObjectVersion"
+              - "s3:AbortMultipartUpload"
+              - "s3:ListBucketMultipartUploads"
+              - "s3:ListMultipartUploadParts"
+            Resource: !Sub "arn:aws:s3:::${Org}-tfstate-services-prod/*"
+
+Outputs:
+  CoreDevBucketName:
+    Value: !Ref TfStateCoreDevBucket
+  CoreStageBucketName:
+    Value: !Ref TfStateCoreStageBucket
+  CoreProdBucketName:
+    Value: !Ref TfStateCoreProdBucket
+  ServicesDevBucketName:
+    Value: !Ref TfStateServicesDevBucket
+  ServicesStageBucketName:
+    Value: !Ref TfStateServicesStageBucket
+  ServicesProdBucketName:
+    Value: !Ref TfStateServicesProdBucket
