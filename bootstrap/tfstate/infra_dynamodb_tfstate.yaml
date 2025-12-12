@@ -1,0 +1,173 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Terraform state locking tables (DynamoDB) for core/services domains across dev/stage/prod.
+
+Parameters:
+  Org:
+    Type: String
+    Default: unobtainium
+    Description: Org / prefix used in table names
+
+Resources:
+  TerraformLocksCoreDev:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "terraform-locks-${Org}-core-dev"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: LockID
+          AttributeType: S
+      KeySchema:
+        - AttributeName: LockID
+          KeyType: HASH
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: managed-by
+          Value: cloudformation
+        - Key: component
+          Value: terraform-state-lock
+        - Key: org
+          Value: !Ref Org
+        - Key: domain
+          Value: core
+        - Key: env
+          Value: dev
+
+  TerraformLocksCoreStage:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "terraform-locks-${Org}-core-stage"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: LockID
+          AttributeType: S
+      KeySchema:
+        - AttributeName: LockID
+          KeyType: HASH
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: managed-by
+          Value: cloudformation
+        - Key: component
+          Value: terraform-state-lock
+        - Key: org
+          Value: !Ref Org
+        - Key: domain
+          Value: core
+        - Key: env
+          Value: stage
+
+  TerraformLocksCoreProd:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "terraform-locks-${Org}-core-prod"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: LockID
+          AttributeType: S
+      KeySchema:
+        - AttributeName: LockID
+          KeyType: HASH
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: managed-by
+          Value: cloudformation
+        - Key: component
+          Value: terraform-state-lock
+        - Key: org
+          Value: !Ref Org
+        - Key: domain
+          Value: core
+        - Key: env
+          Value: prod
+
+  TerraformLocksServicesDev:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "terraform-locks-${Org}-services-dev"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: LockID
+          AttributeType: S
+      KeySchema:
+        - AttributeName: LockID
+          KeyType: HASH
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: managed-by
+          Value: cloudformation
+        - Key: component
+          Value: terraform-state-lock
+        - Key: org
+          Value: !Ref Org
+        - Key: domain
+          Value: services
+        - Key: env
+          Value: dev
+
+  TerraformLocksServicesStage:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "terraform-locks-${Org}-services-stage"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: LockID
+          AttributeType: S
+      KeySchema:
+        - AttributeName: LockID
+          KeyType: HASH
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: managed-by
+          Value: cloudformation
+        - Key: component
+          Value: terraform-state-lock
+        - Key: org
+          Value: !Ref Org
+        - Key: domain
+          Value: services
+        - Key: env
+          Value: stage
+
+  TerraformLocksServicesProd:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "terraform-locks-${Org}-services-prod"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: LockID
+          AttributeType: S
+      KeySchema:
+        - AttributeName: LockID
+          KeyType: HASH
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: managed-by
+          Value: cloudformation
+        - Key: component
+          Value: terraform-state-lock
+        - Key: org
+          Value: !Ref Org
+        - Key: domain
+          Value: services
+        - Key: env
+          Value: prod
+
+Outputs:
+  CoreDevLockTable:
+    Value: !Ref TerraformLocksCoreDev
+  CoreStageLockTable:
+    Value: !Ref TerraformLocksCoreStage
+  CoreProdLockTable:
+    Value: !Ref TerraformLocksCoreProd
+  ServicesDevLockTable:
+    Value: !Ref TerraformLocksServicesDev
+  ServicesStageLockTable:
+    Value: !Ref TerraformLocksServicesStage
+  ServicesProdLockTable:
+    Value: !Ref TerraformLocksServicesProd

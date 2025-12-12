@@ -26,6 +26,3 @@ jobs:
 
       - name: Handshake proof (who am I?)
         run: aws sts get-caller-identity
-
-      - name: List resources 
-        run: aws iam list-roles --max-items 5
