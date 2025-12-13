@@ -68,7 +68,7 @@ jobs:
         run: |
           set -euo pipefail
           terraform init \
-            -backend-config="${{ vars.TF_BACKEND_CONFIG_PATH }}" \
+            -backend-config="${{ matrix.stack_path }}/init/backend-${{matrix.env}}.hcl" \
             -reconfigure \
             -no-color
 
