@@ -1,0 +1,103 @@
+name: terraform-pr-plan
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - "stacks/**"
+      - "**/*.tf"
+      - "**/*.tfvars"
+      - "**/*.hcl"
+      - ".github/workflows/terraform-pr-plan.yml"
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+  AWS_ROLE_NAME: github-actions-oidc
+  AWS_REGION_OIDC: us-east-1
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: true
+      matrix:
+        env: [ dev, stage, prod ]
+        stack_path:
+          - stacks/web/core-api-gateway
+
+    environment: ${{ matrix.env }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/${{ env.AWS_ROLE_NAME }}
+          aws-region: ${{ env.AWS_REGION_OIDC }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.6
+
+      # Compute per each iteration of matrix:
+      # stack_name = last segment of stack_path
+      # plan_file  = <stack_name>-<env>.tfplan
+      - name: Compute Plan Name
+        id: names
+        shell: bash
+        run: |
+          set -euo pipefail
+          stack_name="$(basename '${{ matrix.stack_path }}')"
+          plan_file="${stack_name}-${{ matrix.env }}.tfplan"
+          echo "stack_name=$stack_name" >> "$GITHUB_OUTPUT"
+          echo "plan_file=$plan_file"   >> "$GITHUB_OUTPUT"
+
+      - name: Terraform Init
+        working-directory: ${{ matrix.stack_path }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Working directory: $(pwd)"
+          echo "Initializing Terraform for ${{ matrix.stack_path }} in ${{ matrix.env }} environment"
+          terraform init \
+            -backend-config="./init/backend-${{matrix.env}}.hcl" \
+            -reconfigure \
+            -no-color
+
+      - name: Terraform Plan
+        working-directory: ${{ matrix.stack_path }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Working directory: $(pwd)"
+          terraform plan -var-file="./env/${{ matrix.env }}.tfvars" -out="${{ steps.names.outputs.plan_file }}" -no-color
+          terraform show -json "${{ steps.names.outputs.plan_file }}" > "${{ steps.names.outputs.plan_file }}.json"
+
+      - name: Compute Plan Stash ID
+        id: stackid
+        shell: bash
+        run: |
+          set -euo pipefail
+          # stacks/apps/core-api-gateway -> stacks__apps__core-api-gateway
+          echo "value=$(echo '${{ matrix.stack_path }}' | sed 's|/|__|g')" >> "$GITHUB_OUTPUT"
+
+      - name: Upload Plan Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan__${{ matrix.env }}__${{ steps.stackid.outputs.value }}__${{ github.sha }}
+          path: |
+            ${{ matrix.stack_path }}/${{ steps.names.outputs.plan_file }}
+            ${{ matrix.stack_path }}/${{ steps.names.outputs.plan_file }}.json
+            ${{ matrix.stack_path }}/.terraform.lock.hcl
+          if-no-files-found: error
+          retention-days: 7
