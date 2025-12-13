@@ -1,17 +1,17 @@
 resource "aws_apigatewayv2_api" "http_api" {
-  name          = "${locals.environment}-apigateway-http"
+  name          = "${local.env}-apigateway-http"
   protocol_type = "HTTP"
 
-  tags = merge(locals.tags, {
+  tags = merge(local.tags, {
   })
 }
 
-resource "aws_apigatewayv2_stage" "stage" {
+resource "aws_apigatewayv2_stage" "deployment_stage" {
   api_id      = aws_apigatewayv2_api.http_api.id
-  name        = locals.environment
+  name        = local.env
   auto_deploy = true
 
-  tags = merge(locals.tags, {
+  tags = merge(local.tags, {
   })
 }
 
