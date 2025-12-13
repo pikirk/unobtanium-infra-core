@@ -79,7 +79,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          terraform plan -var-file="${{matrix.env}}.tfvars" -out="${{ steps.names.outputs.plan_file }}" -no-color
+          terraform plan -var-file="./env/${{matrix.env}}.tfvars" -out="${{ steps.names.outputs.plan_file }}" -no-color
           terraform show -json "${{ steps.names.outputs.plan_file }}" > "${{ steps.names.outputs.plan_file }}.json"
 
       - name: Compute Plan Stash ID
