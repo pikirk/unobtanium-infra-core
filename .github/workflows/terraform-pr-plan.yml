@@ -30,7 +30,7 @@ jobs:
       matrix:
         env: [ dev, stage, prod ]
         stack_path:
-          - stacks/apps/core-api-gateway
+          - stacks/web/core-api-gateway
 
     environment: ${{ matrix.env }}
 
