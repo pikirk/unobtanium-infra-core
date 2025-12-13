@@ -70,7 +70,7 @@ jobs:
           echo "Initializing Terraform for ${{ matrix.stack_path }} in ${{ matrix.env }} environment"
           echo "Current directory: $(pwd)"
           terraform init \
-            -backend-config="./${{ matrix.stack_path }}/init/backend-${{matrix.env}}.hcl" \
+            -backend-config="${{github.workspace}}/${{ matrix.stack_path }}/init/backend-${{matrix.env}}.hcl" \
             -reconfigure \
             -no-color
 
