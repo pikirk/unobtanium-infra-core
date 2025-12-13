@@ -23,7 +23,7 @@ locals {
     org        = local.org
     domain     = local.domain
     env        = local.env
+    stack      = local.stack_name
     managed-by = "terraform"
-    component  = "terraform-remote-state-bootstrap"
   }
 }
