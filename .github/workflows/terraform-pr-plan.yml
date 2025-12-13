@@ -69,9 +69,8 @@ jobs:
           set -euo pipefail
           echo "Working directory: $(pwd)"
           echo "Initializing Terraform for ${{ matrix.stack_path }} in ${{ matrix.env }} environment"
-          echo "Current directory: $(pwd)"
           terraform init \
-            -backend-config="${{github.workspace}}/${{ matrix.stack_path }}/init/backend-${{matrix.env}}.hcl" \
+            -backend-config="./init/backend-${{matrix.env}}.hcl" \
             -reconfigure \
             -no-color
 
@@ -81,7 +80,7 @@ jobs:
         run: |
           set -euo pipefail
           echo "Working directory: $(pwd)"
-          terraform plan -var-file="${{github.workspace}}/${{ matrix.stack_path }}/env/${{matrix.env}}.tfvars" -out="${{ steps.names.outputs.plan_file }}" -no-color
+          terraform plan -var-file="./env/${{matrix.env}}.tfvars" -out="${{ steps.names.outputs.plan_file }}" -no-color
           terraform show -json "${{ steps.names.outputs.plan_file }}" > "${{ steps.names.outputs.plan_file }}.json"
 
       - name: Compute Plan Stash ID
