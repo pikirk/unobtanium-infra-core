@@ -67,6 +67,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          echo "Working directory: $(pwd)"
           echo "Initializing Terraform for ${{ matrix.stack_path }} in ${{ matrix.env }} environment"
           echo "Current directory: $(pwd)"
           terraform init \
@@ -79,6 +80,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          echo "Working directory: $(pwd)"
           terraform plan -var-file="${{github.workspace}}/${{ matrix.stack_path }}/env/${{matrix.env}}.tfvars" -out="${{ steps.names.outputs.plan_file }}" -no-color
           terraform show -json "${{ steps.names.outputs.plan_file }}" > "${{ steps.names.outputs.plan_file }}.json"
 
