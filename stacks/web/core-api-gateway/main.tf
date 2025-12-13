@@ -17,5 +17,5 @@ resource "aws_apigatewayv2_stage" "deployment_stage" {
 
 output "invoke_url" {
   description = "Stage invoke URL"
-  value       = aws_apigatewayv2_stage.stage.invoke_url
+  value       = aws_apigatewayv2_stage.deployment_stage.invoke_url
 }
