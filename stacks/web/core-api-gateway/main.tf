@@ -18,6 +18,6 @@ resource "aws_apigatewayv2_stage" "deployment_stage" {
 }
 
 output "invoke_url" {
-  description = "Deployed invoke URL for ${local.env} environment"
+  description = "Deployed invoke URL for API Gateway"
   value       = aws_apigatewayv2_stage.deployment_stage.invoke_url
 }
