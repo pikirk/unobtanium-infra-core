@@ -156,7 +156,7 @@ jobs:
           merge-multiple: true
           patterns:
             ${{ matrix.stack.plan_name }}
-      - run: stat ${{ matrix.stack.plan_name }}
+      - run: ls -l ${{ matrix.stack.stack_path }}
         
       - name: Terraform InitS
         working-directory: ${{ matrix.stack.stack_path }}
