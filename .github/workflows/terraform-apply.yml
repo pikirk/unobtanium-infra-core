@@ -63,7 +63,7 @@ jobs:
         run: |
           set -euo pipefail
           stack_name="$(basename '${{ matrix.stack_path }}')"
-          plan_file="${stack_name}-${{ matrix.env }}.tfplan"
+          plan_file="${stack_name}_${{ matrix.env }}.tfplan"
           echo "stack_name=$stack_name" >> "$GITHUB_OUTPUT"
           echo "plan_file=$plan_file"   >> "$GITHUB_OUTPUT"
       
