@@ -153,12 +153,9 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: ${{ matrix.stack.stack_path }}
-          patterns: |
-            ${{ matrix.stack.plan_name }}
-            ${{ matrix.stack.plan_name }}.json
-            .terraform.lock.hcl
-          merge-multiple: true
-      - run: ls -lauHF ${{ matrix.stack.stack_path }}
+          name: ${{ matrix.stack.plan_name }}
+          if-no-files-found: error
+      - run: stat ${{ matrix.stack.stack_path }}
         
       - name: Terraform Init
         working-directory: ${{ matrix.stack.stack_path }}
