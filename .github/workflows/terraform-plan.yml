@@ -153,11 +153,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: ${{ matrix.stack.stack_path }}
-          name: ${{ matrix.stack.plan_name }}
-          if-no-files-found: error
-      - run: stat ${{ matrix.stack.stack_path }}
+          merge-multiple: true
+          patterns:
+            ${{ matrix.stack.plan_name }}
+      - run: stat ${{ matrix.stack.plan_name }}
         
-      - name: Terraform Init
+      - name: Terraform InitS
         working-directory: ${{ matrix.stack.stack_path }}
         shell: bash
         run: |
