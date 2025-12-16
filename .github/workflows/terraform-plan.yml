@@ -172,6 +172,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          ls -lauHF
+          stat ${{ matrix.stack.plan_name }}
           echo "Working directory: $(pwd)"
           echo "Applying Terraform plan '${{ matrix.stack.plan_name }}' to ${{ matrix.env }} environment"
           terraform apply -auto-approve ${{ matrix.stack.plan_name }} -no-color
