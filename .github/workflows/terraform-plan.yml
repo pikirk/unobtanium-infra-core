@@ -152,9 +152,14 @@ jobs:
       - name: Download Prepared Plan
         uses: actions/download-artifact@v4
         with:
-          name: ${{ matrix.stack.plan_name }}
           path: ${{ matrix.stack.stack_path }}
-
+          patterns: |
+            ${{ matrix.stack.plan_name }}
+            ${{ matrix.stack.plan_name }}.json
+            .terraform.lock.hcl
+          merge-multiple: true
+      - run: ls -lauHF ${{ matrix.stack.stack_path }}
+        
       - name: Terraform Init
         working-directory: ${{ matrix.stack.stack_path }}
         shell: bash
@@ -172,8 +177,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ls -lauHF
-          stat ${{ matrix.stack.plan_name }}
           echo "Working directory: $(pwd)"
           echo "Applying Terraform plan '${{ matrix.stack.plan_name }}' to ${{ matrix.env }} environment"
           terraform apply -auto-approve ${{ matrix.stack.plan_name }} -no-color
