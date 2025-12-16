@@ -182,6 +182,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [plan, apply-dev]
     timeout-minutes: 120
+    environment: ${{ matrix.env }}
 
     # Guard: Only deploy on pushes to main (never on PR events)
     # Guard: Only deploy if the previous job (apply-dev) succeeded
@@ -200,8 +201,6 @@ jobs:
         stack:
           - stack_path: stacks/web/core-api-gateway
             plan_name: core-api-gateway_stage.tfplan
-
-    environment: ${{ matrix.env }}
 
     steps:
       - name: Checkout
@@ -253,6 +252,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [plan, apply-stage]
     timeout-minutes: 120
+    environment: prod
 
     # Guard: Only deploy on pushes to main (never on PR events)
     # Guard: Only deploy if the previous job (apply-stagee) succeeded
@@ -267,12 +267,10 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        env: [ stage ]
+        env: [ prod ]
         stack:
           - stack_path: stacks/web/core-api-gateway
-            plan_name: core-api-gateway_stage.tfplan
-
-    environment: ${{ matrix.env }}
+            plan_name: core-api-gateway_prod.tfplan
 
     steps:
       - name: Checkout
