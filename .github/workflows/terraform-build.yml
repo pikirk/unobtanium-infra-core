@@ -8,8 +8,7 @@ on:
       - "**/*.tf"
       - "**/*.tfvars"
       - "**/*.hcl"
-      - ".github/workflows/terraform-apply.yml"
-      - ".github/workflows/terraform-plan.yml"
+      - ".github/workflows/terraform-build.yml"
   push:
     branches: [ main ]
     paths:
@@ -17,8 +16,7 @@ on:
       - "**/*.tf"
       - "**/*.tfvars"
       - "**/*.hcl"
-      - ".github/workflows/terraform-apply.yml"
-      - ".github/workflows/terraform-plan.yml"
+      - ".github/workflows/terraform-build.yml"
 
 permissions:
   id-token: write
@@ -158,7 +156,7 @@ jobs:
             ${{ matrix.stack.plan_name }}
       - run: ls -l ${{ matrix.stack.stack_path }}
         
-      - name: Terraform InitS
+      - name: Terraform Init
         working-directory: ${{ matrix.stack.stack_path }}
         shell: bash
         run: |
@@ -171,6 +169,148 @@ jobs:
             -no-color
 
       - name: Terraform Apply (DEV)
+        working-directory: ${{ matrix.stack.stack_path }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Working directory: $(pwd)"
+          echo "Applying Terraform plan '${{ matrix.stack.plan_name }}' to ${{ matrix.env }} environment"
+          terraform apply -auto-approve ${{ matrix.stack.plan_name }} -no-color
+
+  apply-stage:
+    name: Terraform Apply (STAGE)
+    runs-on: ubuntu-latest
+    needs: [plan, apply-dev]
+    timeout-minutes: 120
+
+    # Guard: Only deploy on pushes to main (never on PR events)
+    # Guard: Only deploy if the previous job (apply-dev) succeeded
+    if: |
+      ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 
+      needs.apply-dev.outputs == 'success' }}
+
+    permissions:
+      contents: read
+      id-token: write
+
+    strategy:
+      fail-fast: true
+      matrix:
+        env: [ stage ]
+        stack:
+          - stack_path: stacks/web/core-api-gateway
+            plan_name: core-api-gateway_stage.tfplan
+
+    environment: ${{ matrix.env }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/${{ env.AWS_ROLE_NAME }}
+          aws-region: ${{ env.AWS_REGION_OIDC }}
+
+      - name: Terraform Setup
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.6
+      
+      - name: Download Prepared Plan
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ matrix.stack.stack_path }}
+          merge-multiple: true
+          patterns:
+            ${{ matrix.stack.plan_name }}
+      - run: ls -l ${{ matrix.stack.stack_path }}
+        
+      - name: Terraform Init
+        working-directory: ${{ matrix.stack.stack_path }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Working directory: $(pwd)"
+          echo "Initializing Terraform for ${{ matrix.stack.stack_path }} in ${{ matrix.env }} environment"
+          terraform init \
+            -backend-config="./init/backend-${{matrix.env}}.hcl" \
+            -reconfigure \
+            -no-color
+
+      - name: Terraform Apply (STAGE)
+        working-directory: ${{ matrix.stack.stack_path }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Working directory: $(pwd)"
+          echo "Applying Terraform plan '${{ matrix.stack.plan_name }}' to ${{ matrix.env }} environment"
+          terraform apply -auto-approve ${{ matrix.stack.plan_name }} -no-color
+
+  apply-prod:
+    name: Terraform Apply (PROD)
+    runs-on: ubuntu-latest
+    needs: [plan, apply-stage]
+    timeout-minutes: 120
+
+    # Guard: Only deploy on pushes to main (never on PR events)
+    # Guard: Only deploy if the previous job (apply-stagee) succeeded
+    if: |
+      ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 
+      needs.apply-stage.outputs == 'success' }}
+
+    permissions:
+      contents: read
+      id-token: write
+
+    strategy:
+      fail-fast: true
+      matrix:
+        env: [ stage ]
+        stack:
+          - stack_path: stacks/web/core-api-gateway
+            plan_name: core-api-gateway_stage.tfplan
+
+    environment: ${{ matrix.env }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/${{ env.AWS_ROLE_NAME }}
+          aws-region: ${{ env.AWS_REGION_OIDC }}
+
+      - name: Terraform Setup
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.6
+      
+      - name: Download Prepared Plan
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ matrix.stack.stack_path }}
+          merge-multiple: true
+          patterns:
+            ${{ matrix.stack.plan_name }}
+      - run: ls -l ${{ matrix.stack.stack_path }}
+        
+      - name: Terraform Init
+        working-directory: ${{ matrix.stack.stack_path }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Working directory: $(pwd)"
+          echo "Initializing Terraform for ${{ matrix.stack.stack_path }} in ${{ matrix.env }} environment"
+          terraform init \
+            -backend-config="./init/backend-${{matrix.env}}.hcl" \
+            -reconfigure \
+            -no-color
+
+      - name: Terraform Apply (PROD)
         working-directory: ${{ matrix.stack.stack_path }}
         shell: bash
         run: |
