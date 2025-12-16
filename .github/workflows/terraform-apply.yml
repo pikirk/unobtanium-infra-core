@@ -1,15 +1,12 @@
 name: terraform-plan
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "stacks/**"
-      - "**/*.tf"
-      - "**/*.tfvars"
-      - "**/*.hcl"
-      - ".github/workflows/terraform-apply.yml"
-      - ".github/workflows/terraform-plan.yml"
+  workflow_call:
+    inputs:
+      branch:
+        description: "The branch to run the workflow on"
+        type: string
+        required: true
 
 permissions:
   id-token: write
@@ -25,6 +22,8 @@ env:
 jobs:
   plan:
     uses: ./.github/workflows/terraform-plan.yml
+    with:
+      branch: main
 
   apply-dev-matrix:
     name: Apply Dev Stacks
