@@ -8,7 +8,8 @@ on:
       - "**/*.tf"
       - "**/*.tfvars"
       - "**/*.hcl"
-      - ".github/workflows/terraform-pr-plan.yml"
+      - ".github/workflows/terraform-apply.yml"
+      - ".github/workflows/terraform-plan.yml"
 
 permissions:
   id-token: write

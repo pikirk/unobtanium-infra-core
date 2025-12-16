@@ -9,6 +9,12 @@ on:
       - "**/*.tfvars"
       - "**/*.hcl"
       - ".github/workflows/terraform-apply.yml"
+      - ".github/workflows/terraform-plan.yml"
+
+permissions:
+  id-token: write
+  contents: read
+
 env:
   TF_IN_AUTOMATION: "true"
   TF_INPUT: "false"
@@ -81,6 +87,7 @@ jobs:
             -no-color
 
       - name: Terraform Apply
+        if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
         working-directory: ${{ matrix.stack_path }}
         shell: bash
         run: |
