@@ -1,0 +1,90 @@
+name: terraform-plan
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "stacks/**"
+      - "**/*.tf"
+      - "**/*.tfvars"
+      - "**/*.hcl"
+      - ".github/workflows/terraform-apply.yml"
+env:
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+  AWS_ROLE_NAME: github-actions-oidc
+  AWS_REGION_OIDC: us-east-1
+  
+jobs:
+  plan:
+    uses: ./.github/workflows/terraform-plan.yml
+
+  apply-dev-matrix:
+    name: Apply Dev Stacks
+    runs-on: ubuntu-latest
+    needs: plan
+    permissions:
+      contents: read
+      id-token: write
+
+    strategy:
+      fail-fast: true
+      matrix:
+        env: [ dev ]
+        stack_path:
+          - stacks/web/core-api-gateway
+
+    environment: ${{ matrix.env }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/${{ env.AWS_ROLE_NAME }}
+          aws-region: ${{ env.AWS_REGION_OIDC }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.6
+
+      - name: Compute Plan Name
+        id: plan_metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          stack_name="$(basename '${{ matrix.stack_path }}')"
+          plan_file="${stack_name}-${{ matrix.env }}.tfplan"
+          echo "stack_name=$stack_name" >> "$GITHUB_OUTPUT"
+          echo "plan_file=$plan_file"   >> "$GITHUB_OUTPUT"
+      
+      - name: Download Prepared Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ steps.plan_metadata.outputs.plan_file }}
+          path: ${{ matrix.stack_path }}
+
+      - name: Terraform Init
+        working-directory: ${{ matrix.stack_path }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Working directory: $(pwd)"
+          echo "Initializing Terraform for ${{ matrix.stack_path }} in ${{ matrix.env }} environment"
+          terraform init \
+            -backend-config="./init/backend-${{matrix.env}}.hcl" \
+            -reconfigure \
+            -no-color
+
+      - name: Terraform Apply
+        working-directory: ${{ matrix.stack_path }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Working directory: $(pwd)"
+          echo "Applying Terraform plan '${{ steps.plan_metadata.outputs.plan_file  }}' to ${{ matrix.env }} environment"
+          terraform apply -auto-approve ${{ steps.plan_metadata.outputs.plan_file }}
