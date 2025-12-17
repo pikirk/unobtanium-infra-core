@@ -102,10 +102,7 @@ jobs:
             -reconfigure \
             -no-color
 
-          terraform workspace new ${{ matrix.env }}
-          terraform workspace select ${{ matrix.env }}
-          terraform workspace list
-      - name: Terraform Workspace Select
+      - name: Terraform Workspace
         working-directory: ${{ matrix.stack_path }}
         shell: bash
         run: |
