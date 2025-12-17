@@ -10,7 +10,7 @@ resource "aws_apigatewayv2_api" "http_api" {
 resource "aws_apigatewayv2_stage" "deployment_stage" {
   api_id      = aws_apigatewayv2_api.http_api.id
   name        = local.env
-  description = "Deployed stage for ${local.env} environment"
+  description = "API stage container for ${local.env} environment"
   auto_deploy = true
 
   tags = merge(local.tags, {
