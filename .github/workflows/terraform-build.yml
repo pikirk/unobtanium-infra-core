@@ -195,6 +195,15 @@ jobs:
             -reconfigure \
             -no-color
 
+      - name: Terraform Workspace
+        working-directory: ${{ matrix.stack.stack_path }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Working directory: $(pwd)"
+          terraform workspace select ${{ matrix.env }} || terraform workspace new ${{ matrix.env }}
+          terraform workspace list
+
       - name: Terraform Apply (DEV)
         working-directory: ${{ matrix.stack.stack_path }}
         shell: bash
