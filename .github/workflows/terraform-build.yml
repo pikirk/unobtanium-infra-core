@@ -101,6 +101,7 @@ jobs:
             -backend-config="./init/backend-${{matrix.env}}.hcl" \
             -reconfigure \
             -no-color
+            
           terraform workspace new ${{ matrix.env }}
           terraform workspace select ${{ matrix.env }}
           terraform workspace list

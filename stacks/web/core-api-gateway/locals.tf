@@ -6,10 +6,6 @@ locals {
   # Environment suffix (dev|stage|prod) is provided via var.env.
   env = var.env
 
-  # tfstate bucket and lock table name conventions
-  tfstate_bucket_name = "${local.org}-tfstate-${local.domain}-${local.env}"
-  lock_table_name     = "terraform-locks-${local.org}-${local.domain}-${local.env}"
-
   # stack organization conventions
   # unobtanium/core/{env}/{stack_group}/{stack}/terraform.tfstate
   stack_group = "api"
