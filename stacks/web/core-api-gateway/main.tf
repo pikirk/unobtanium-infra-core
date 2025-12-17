@@ -1,6 +1,6 @@
 resource "aws_apigatewayv2_api" "http_api" {
   name          = "${local.env}-apigateway-http"
-  description = "API Gateway for ${local.env} environment"
+  description   = "API Gateway for ${local.env} environment"
   protocol_type = "HTTP"
 
   tags = merge(local.tags, {
