@@ -40,8 +40,6 @@ jobs:
         stack_path:
           - stacks/web/core-api-gateway
 
-    environment: ${{ matrix.env }}
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -70,6 +68,26 @@ jobs:
           echo "stack_name=$stack_name" >> "$GITHUB_OUTPUT"
           echo "plan_file=$plan_file"   >> "$GITHUB_OUTPUT"
 
+      - name: Terraform Format
+        working-directory: ${{ github.workspace }}/stacks/
+        id: fmt
+        run: terraform fmt -check -recursive
+        continue-on-error: true
+
+      - name: Setup Linter
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: latest
+
+      - name: Initialize Linter
+        run: tflint --init
+
+      - name: Terraform Lint
+        working-directory: ${{ github.workspace }}/stacks/
+        id: tflint
+        run: tflint --recursive --format=compact
+        continue-on-error: true
+
       - name: Terraform Init
         working-directory: ${{ matrix.stack_path }}
         shell: bash
@@ -81,6 +99,15 @@ jobs:
             -backend-config="./init/backend-${{matrix.env}}.hcl" \
             -reconfigure \
             -no-color
+
+      - name: Terraform Workspace
+        working-directory: ${{ matrix.stack_path }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Working directory: $(pwd)"
+          terraform workspace select ${{ matrix.env }} || terraform workspace new ${{ matrix.env }}
+          terraform workspace list
 
       - name: Terraform Plan
         working-directory: ${{ matrix.stack_path }}
