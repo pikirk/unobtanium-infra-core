@@ -2,7 +2,7 @@ resource "aws_s3_bucket" "lambda_artifacts" {
   bucket = var.lambda_artifacts_bucket_name
 
   tags = merge(local.tags, {
-    Purpose = "Store lambda deployment packages for (${local.env})"
+    Purpose = "Stores lambda deployment packages for ${local.env}"
   })
 }
 
