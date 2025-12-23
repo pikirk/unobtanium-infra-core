@@ -3,6 +3,13 @@ resource "aws_apigatewayv2_api" "http_api" {
   description   = "API Gateway for ${local.env} environment"
   protocol_type = "HTTP"
 
+  cors_configuration {
+    allow_origins = var.cors_allow_origins
+    allow_methods = var.cors_allow_methods
+    allow_headers = var.cors_allow_headers
+    max_age       = var.cors_max_age_seconds
+  }
+
   tags = merge(local.tags, {
   })
 }
